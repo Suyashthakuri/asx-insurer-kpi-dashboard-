@@ -167,14 +167,4 @@ asx-insurer-kpi-dashboard/
 
 ---
 
-## How to run
 
-1. Clone this repo
-2. Open `data/asx_insurer_dataset.xlsx` to review the source data
-3. Open DB Browser for SQLite, import the 4 sheets as tables, run any `.sql` file
-4. Open `powerbi/ASX_Insurer_KPI_Dashboard.pbix` in Power BI Desktop
-5. If data refresh fails, re-point the data source to your local `asx_insurer_dataset.xlsx`
-
----
-
-*Built as part of a reporting analytics portfolio targeting financial services analyst roles in Sydney, Australia.*
