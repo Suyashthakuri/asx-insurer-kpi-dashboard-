@@ -108,15 +108,28 @@ fact_financials ——— dim_period
 
 **Page 1 — Executive Summary**
 4 KPI cards (GWP, Insurance Profit, COR, Investment Income) with vs-budget variance and YoY growth. Conditional formatting: green = above target, amber = within 5%, red = below target. Company and period slicers. Written commentary block.
+<img width="1167" height="718" alt="01_executive_summary" src="https://github.com/user-attachments/assets/3ce1923e-de33-49b0-b41f-e46a2c68fd20" />
+
+
+
 
 **Page 2 — Revenue & Variance Detail**
 Clustered bar chart: actual vs. budget by quarter. Variance waterfall chart. Conditional formatting table showing variance % per company per period. Drill-through to company deep-dive.
+<img width="1083" height="573" alt="02_variance_detail" src="https://github.com/user-attachments/assets/159b76a6-1aec-4cac-8635-188cca94247e" />
+
+
 
 **Page 3 — KPI Trends**
 Rolling 4Q average line chart for GWP and COR. YoY growth % cards. Scatter plot: COR (x-axis) vs. Insurance Profit (y-axis) — shows the relationship between underwriting efficiency and profitability, a key insight for insurance analysts.
+<img width="1253" height="535" alt="03_kpi_trends" src="https://github.com/user-attachments/assets/efa97267-866a-4211-b153-993bb02bb679" />
+
+
 
 **Page 4 — Company Deep-Dive** (drill-through)
 All 8 metrics for selected company. Actual, budget, variance %, prior year, YoY change. Sparkline trends. Bookmark toggle: Latest Quarter vs. Full Year view.
+<img width="904" height="707" alt="04_company_deepdive" src="https://github.com/user-attachments/assets/9c91aa40-b2f6-4a9e-b871-44c8d6846b9b" />
+
+
 
 ---
 
