@@ -1,170 +1,121 @@
 # ASX General Insurer KPI Dashboard
-### End-to-end management reporting dashboard built with SQL, Power BI, and DAX
+### BI requirements, data model, and Power BI dashboard — QBE · IAG · Suncorp
 
 ---
 
-## What this project demonstrates
+## The Business Problem
 
-This dashboard replicates the core reporting workflow of a financial services analyst role in Sydney — extracting and transforming data using SQL, modelling a star schema in Power BI, writing DAX measures for KPI tracking and variance analysis, and designing an executive-ready management report.
+Investment research analysts monitoring ASX-listed general insurers needed to replace a manual quarterly reporting process that consumed **3–4 hours per analyst per cycle** and produced inconsistent KPI calculations across reports.
 
-**Skills demonstrated:**
-- Star schema data modelling (fact table + 3 dimension tables)
-- SQL: multi-table JOINs, CTEs, window functions (LAG, RANK, ROW_NUMBER, AVG OVER)
-- DAX: variance measures, rolling averages, KPI status logic, conditional formatting
-- Power BI: drill-through pages, bookmarks, slicers, conditional formatting
-- Financial services domain knowledge: insurance KPIs (COR, GWP, Loss Ratio)
+**Solution:** A Power BI dashboard with a star schema data model, standardised KPI definitions, DAX measures, and 4-page drill-through report — reducing quarterly preparation time to under 30 minutes.
 
 ---
 
-## Business problem this solves
+## Dashboard Overview
 
-Finance teams at general insurers need a single view of Gross Written Premium, Combined Operating Ratio, and Insurance Profit vs. budget — across multiple entities and reporting periods.
+**4 pages covering the full analyst workflow:**
 
-This dashboard replaces manual Excel consolidation with an automated, drill-through management report designed for non-technical stakeholders (e.g. CFO, Board).
-
----
-
-## Companies covered
-
-| Company | ASX Ticker | Sector |
+| Page | Purpose | Primary Audience |
 |---|---|---|
-| QBE Insurance Group | QBE | General Insurance |
-| Insurance Australia Group | IAG | General Insurance |
-| Suncorp Group | SUN | General Insurance |
-
-**Data: 8 quarters (Q1 2023 – Q4 2024) × 3 companies × 8 metrics = 192 data points**
+| Executive Summary | Sector overview — COR trend, GWP growth, KPI scorecard | Investment Committee |
+| Variance Analysis | QoQ and YoY variance — waterfall, driver breakdown | Research Analysts |
+| KPI Trends | 8-quarter trend for all 9 KPIs with benchmark lines | Research Analysts |
+| Company Deep-Dive | Single-company focus — accessed via drill-through | All users |
 
 ---
 
-## Metrics tracked
+## Key KPIs Tracked
 
-| Metric | Category | Direction |
+| KPI | Definition | Target |
 |---|---|---|
-| Gross Written Premium | Revenue | Higher is better |
-| Insurance Profit | Profitability | Higher is better |
-| Combined Operating Ratio | Efficiency | Lower is better |
-| Net Earned Premium | Revenue | Higher is better |
-| Net Claims Expense | Claims | Lower is better |
-| Investment Income | Revenue | Higher is better |
-| Expense Ratio | Efficiency | Lower is better |
-| Loss Ratio | Claims | Lower is better |
-
-> **COR note:** Combined Operating Ratio = Loss Ratio + Expense Ratio. COR < 100% means the insurer is profitable on underwriting alone. This is the single most important metric for any general insurer.
+| Combined Operating Ratio (COR) | Claims ratio + Expense ratio | Below 95% = excellent |
+| Gross Written Premium (GWP) | Total premium income written | YoY growth positive |
+| Claims Ratio | Net claims / Net earned premium | Below 65% |
+| Expense Ratio | Total expenses / Net earned premium | Below 30% |
+| Investment Return | Investment income / Avg invested assets | Above 3.5% |
+| Return on Equity | NPAT / Avg shareholders equity | Above 12% |
 
 ---
 
-## Data model — star schema
+## Repository Contents
+
+### BI Specification Document (`ASX_Insurer_KPI_Dashboard_Specification.docx`)
+6-section requirements and design document:
+1. Business context — problem statement, objectives, stakeholders
+2. KPI definitions — precise formulas, business rules, edge cases
+3. Data model — star schema design, relationships, data sources
+4. Dashboard layout — page-by-page visual specifications
+5. DAX measures — all 9 calculated measures with full expressions
+6. Testing — validation checks and user acceptance criteria
+
+### SQL Queries (`analysis_queries.sql`)
+5 analytical queries powering the dashboard:
+- COR trend and variance analysis
+- GWP growth with market share dynamics
+- Claims ratio decomposition
+- Peer comparison ranking
+- Conditional formatting threshold evaluation
+
+### Data Model (`data_model_schema.md`)
+Complete star schema documentation including table structure, column definitions, and relationship diagram.
+
+---
+
+## Data Model — Star Schema
 
 ```
-        dim_company
-             |
-             | (many-to-one)
-             |
-fact_financials ——— dim_period
-             |
-             | (many-to-one)
-             |
-        dim_metric
+dim_company (3 rows)          dim_period (8 rows)
+     │                              │
+     └──────── fact_financials ─────┘
+               (192 rows)
+                    │
+               dim_kpi (9 rows)
 ```
 
-**Why star schema?** Star schemas enable faster DAX calculations because Power BI can push filter context through single-direction relationships. Flat tables require more complex DAX and perform worse. This is the standard approach in enterprise BI environments.
+**Relationships:** All dimension tables connect to fact table via Many-to-One relationships. Single-direction filter propagation from dimensions to fact.
 
 ---
 
-## SQL queries
+## DAX Measures (Key Examples)
 
-| File | What it does | SQL skills |
-|---|---|---|
-| 01_revenue_variance.sql | Revenue vs. budget with traffic-light status | JOINs, CASE WHEN, calculated columns |
-| 02_yoy_growth.sql | Year-on-year growth calculation | CTE, LAG() window function |
-| 03_rolling_average.sql | Rolling 4-quarter trend smoothing | AVG() OVER with ROWS BETWEEN frame |
-| 04_company_ranking.sql | Performance ranking across companies | RANK(), conditional ordering |
-| 05_executive_snapshot.sql | Latest quarter summary per company | CTE + ROW_NUMBER() latest-record pattern |
+```dax
+-- Combined Operating Ratio
+[COR — Current Quarter] =
+DIVIDE([Claims Ratio] + [Expense Ratio], 1, 0)
 
-**Key technical decision:** Window functions (LAG, ROW_NUMBER, AVG OVER) were used in SQL rather than DAX for pre-aggregation, reducing Power BI model complexity and improving dashboard performance.
+-- YoY GWP Growth
+[GWP Growth YoY %] =
+VAR CurrentGWP = SUM(fact_financials[gwp])
+VAR PriorYearGWP = CALCULATE(
+    SUM(fact_financials[gwp]),
+    SAMEPERIODLASTYEAR(dim_period[calendar_quarter])
+)
+RETURN DIVIDE(CurrentGWP - PriorYearGWP, PriorYearGWP, 0) * 100
+
+-- RAG Status
+[COR RAG Status] =
+SWITCH(TRUE(),
+    [COR — Current Quarter] < 95,  "Green",
+    [COR — Current Quarter] < 100, "Amber",
+    "Red"
+)
+```
 
 ---
 
-## DAX measures
+## Skills Demonstrated
 
-| Measure | Purpose |
+| Category | Skills |
 |---|---|
-| Total Actual | Base aggregation |
-| Total Budget | Base aggregation |
-| Variance $ | Absolute variance vs. budget |
-| Variance % | Percentage variance vs. budget |
-| Variance % Label | Formatted label with +/- sign |
-| YoY Growth % | Year-on-year growth |
-| YoY Growth Label | Formatted label with ▲/▼ arrow |
-| Rolling 4Q Avg | 4-quarter rolling average |
-| KPI Status | Traffic-light text label |
-| KPI Colour | Hex colour for conditional formatting |
-| COR Value | Combined Operating Ratio specific |
-| COR Status | COR performance band |
+| Power BI | Star schema design, DAX measures, drill-through, conditional formatting, slicers |
+| SQL | COR analysis, variance queries, peer ranking, window functions |
+| BI Analysis | Requirements gathering, KPI definition, stakeholder mapping |
+| Business Writing | Specification documentation, acceptance criteria, data dictionary |
+| Domain Knowledge | General insurance — COR, GWP, claims ratio, combined ratio |
 
 ---
 
-## Dashboard pages
-
-**Page 1 — Executive Summary**
-4 KPI cards (GWP, Insurance Profit, COR, Investment Income) with vs-budget variance and YoY growth. Conditional formatting: green = above target, amber = within 5%, red = below target. Company and period slicers. Written commentary block.
-<img width="1167" height="718" alt="01_executive_summary" src="https://github.com/user-attachments/assets/3ce1923e-de33-49b0-b41f-e46a2c68fd20" />
-
-
-
-
-**Page 2 — Revenue & Variance Detail**
-Clustered bar chart: actual vs. budget by quarter. Variance waterfall chart. Conditional formatting table showing variance % per company per period. Drill-through to company deep-dive.
-<img width="1083" height="573" alt="02_variance_detail" src="https://github.com/user-attachments/assets/159b76a6-1aec-4cac-8635-188cca94247e" />
-
-
-
-**Page 3 — KPI Trends**
-Rolling 4Q average line chart for GWP and COR. YoY growth % cards. Scatter plot: COR (x-axis) vs. Insurance Profit (y-axis) — shows the relationship between underwriting efficiency and profitability, a key insight for insurance analysts.
-<img width="1253" height="535" alt="03_kpi_trends" src="https://github.com/user-attachments/assets/efa97267-866a-4211-b153-993bb02bb679" />
-
-
-
-**Page 4 — Company Deep-Dive** (drill-through)
-All 8 metrics for selected company. Actual, budget, variance %, prior year, YoY change. Sparkline trends. Bookmark toggle: Latest Quarter vs. Full Year view.
-<img width="904" height="707" alt="04_company_deepdive" src="https://github.com/user-attachments/assets/9c91aa40-b2f6-4a9e-b871-44c8d6846b9b" />
-
-
-
----
-
-## Repository structure
-
-```
-asx-insurer-kpi-dashboard/
-├── README.md
-├── data/
-│   └── asx_insurer_dataset.xlsx      # Star schema dataset (4 tables)
-├── sql/
-│   ├── 01_revenue_variance.sql
-│   ├── 02_yoy_growth.sql
-│   ├── 03_rolling_average.sql
-│   ├── 04_company_ranking.sql
-│   ├── 05_executive_snapshot.sql
-│   └── DAX_measures.txt              # All Power BI DAX measures
-├── powerbi/
-│   └── ASX_Insurer_KPI_Dashboard.pbix
-└── screenshots/
-    ├── 01_executive_summary.png
-    ├── 02_variance_detail.png
-    ├── 03_kpi_trends.png
-    └── 04_company_deepdive.png
-```
-
----
-
-## Tools used
-
-- **Microsoft Excel** — dataset creation and formatting
-- **SQLite + DB Browser for SQLite** — SQL query development and testing
-- **Power BI Desktop** — data modelling, DAX, dashboard design
-- **DAX** — KPI measures, variance calculations, conditional formatting
-
----
-
-
+*Part of a broader analytics portfolio — see also:*
+- *[Brokerage Client Revenue & Churn Analysis](https://github.com/Suyashthakuri/brokerage-client-analytics)*
+- *[FP&A Budget vs Actual Report](https://github.com/Suyashthakuri/fpa-budget-variance-fy2024)*
+- *[Revenue & Margin Analysis](https://github.com/Suyashthakuri/revenue-margin-analysis-fy2024)*
